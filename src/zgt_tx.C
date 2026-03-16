@@ -106,11 +106,25 @@ void *readtx(void *arg){
 }
 
 
-void *writetx(void *arg){ //do the operations for writing; similar to readTx
+void *writetx(void *arg){ //do the operations for writing; similar to readTx //emely
   struct param *node = (struct param*)arg;	// struct parameter that contains
   
   // do the operations for writing; similar to readTx. Write your code
+////////
+  // synchronize with transaction manager
+  start_operation(node->tid, node->count);
 
+  // process the write operation
+  process_read_write_operation(node->tid, node->obno, node->count, 'W');
+
+  // write to log file
+  fprintf(ZGT_Sh->logfile, "T%ld\tWriteTx\tObj:%ld\n", node->tid, node->obno);
+  fflush(ZGT_Sh->logfile);
+
+  // finish operation
+  finish_operation(node->tid);
+
+  pthread_exit(NULL);   // thread exit
 }
 
 // common method to process read/write: Just a suggestion
@@ -129,13 +143,25 @@ void *aborttx(void *arg)
   pthread_exit(NULL);			// thread exit
 }
 
-void *committx(void *arg)
+void *committx(void *arg) //emely
 {
  
     //remove the locks/objects before committing
   struct param *node = (struct param*)arg;// get tid and count
 
-  //write your code
+    // synchronize operation order
+  start_operation(node->tid, node->count);
+
+    // call transaction manager commit
+  ZGT_Sh->tm->CommitTx(node->tid, node->count);
+
+    // log commit operation
+  fprintf(ZGT_Sh->logfile, "T%ld\tCommitTx\n", node->tid);
+  fflush(ZGT_Sh->logfile);
+
+    // finish operation
+  finish_operation(node->tid);
+
   pthread_exit(NULL);			// thread exit
 }
 
