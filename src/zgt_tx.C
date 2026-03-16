@@ -111,7 +111,7 @@ void *writetx(void *arg){ //do the operations for writing; similar to readTx //e
   
   // do the operations for writing; similar to readTx. Write your code
 ////////
-  // synchronize with transaction manager
+  //synchronize with transaction manager
   start_operation(node->tid, node->count);
 
   // process the write operation
@@ -153,7 +153,7 @@ void *committx(void *arg) //emely
   start_operation(node->tid, node->count);
 
     // call transaction manager commit
-  ZGT_Sh->tm->CommitTx(node->tid, node->count);
+  ZGT_Sh->CommitTx(node->tid, node->count);
 
     // log commit operation
   fprintf(ZGT_Sh->logfile, "T%ld\tCommitTx\n", node->tid);
