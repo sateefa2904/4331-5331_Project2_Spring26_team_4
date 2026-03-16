@@ -149,13 +149,35 @@ int zgt_tm::TxWrite(long tid, long obno, int thrNum)
    return(0);  // successful operation
  }
 
-int zgt_tm::CommitTx(long tid, int thrNum)
+int zgt_tm::CommitTx(long tid, int thrNum) //emely
  {
-   
-    //write your code
-   return(0); //successful operation
+   //write your code
+    zgt_tx *tx;
 
- }
+    // find the transaction
+    tx = get_tx(tid);
+
+    if (tx == NULL) {
+        printf("ERROR: CommitTx - transaction %ld not found\n", tid);
+        fflush(stdout);
+        return -1;
+    }
+
+    // mark transaction as committed
+    tx->status = TR_END;
+
+#ifdef TX_DEBUG
+    printf("Transaction %ld committing\n", tid);
+    fflush(stdout);
+#endif
+
+    // perform commit operation (releases locks)
+    tx->do_commit_abort_operation(tid, thrNum);
+
+   return(0); //successful operation
+}
+
+
  
 int zgt_tm::AbortTx(long tid, int thrNum)
  {       
