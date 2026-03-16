@@ -173,7 +173,47 @@ void *committx(void *arg) //emely
 
 void *do_commit_abort_operation(long t, char status){
 
-  // write your code
+  //WMorokoshi[03/15/2026]
+ zgt_tx *tx;
+  long    myTid;    // save tid for signaling after sem0 released
+
+  // Acquire TM lock to safely access and modify shared structures
+  zgt_p(0);
+  tx = get_tx(t);
+
+  if (tx == NULL){
+    fprintf(ZGT_Sh->logfile,
+            "T%d\tError: Trying to %s a non-existent transaction\n",
+            (int)t, (status == TR_END) ? "Commit" : "Abort");
+    fflush(ZGT_Sh->logfile);
+    zgt_v(0);
+    return NULL;
+  }
+
+  // Record status change
+  tx->status = status;
+  myTid = tx->tid;   // save before remove
+
+  if (status == TR_END){
+    fprintf(ZGT_Sh->logfile, "T%d\t\tCommitTx\t", (int)t);
+  } else {
+    fprintf(ZGT_Sh->logfile, "T%d\t\tAbortTx\t", (int)t);
+  }
+  fflush(ZGT_Sh->logfile);
+
+  // Free all locks held by this transaction; logs object values
+  tx->free_locks();
+
+  // Remove tx node from TM list
+  tx->remove_tx();
+
+  zgt_v(0);
+
+  for (int i = 0; i < MAX_TRANSACTIONS; i++){
+    zgt_v(myTid);
+  }
+
+  return NULL;
 }
 
 int zgt_tx::remove_tx ()
@@ -325,7 +365,35 @@ void zgt_tx::print_lock(){
 
 void zgt_tx::perform_read_write_operation(long tid,long obno, char lockmode){
   
-  // write your code
+ //WMorokoshi[03/15/2026]
+
+ int optime = ZGT_Sh->optime[tid];
+
+  if (lockmode == 'S'){
+    // Read operation: decrement value by 4
+    ZGT_Sh->objarray[obno]->value -= 4;
+
+    fprintf(ZGT_Sh->logfile,
+            "T%d\t%c \tReadTx \t%d:%d:%d \tReadLock \tGranted \t%c\n",
+            (int)tid, this->Txtype,
+            (int)obno, ZGT_Sh->objarray[obno]->value, optime,
+            this->status);
+    fflush(ZGT_Sh->logfile);
+  }
+  else {
+    // Write operation: increment value by 7
+    ZGT_Sh->objarray[obno]->value += 7;
+
+    fprintf(ZGT_Sh->logfile,
+            "T%d\t%c \tWriteTx \t%d:%d:%d \tWriteLock \tGranted \t%c\n",
+            (int)tid, this->Txtype,
+            (int)obno, ZGT_Sh->objarray[obno]->value, optime,
+            this->status);
+    fflush(ZGT_Sh->logfile);
+  }
+
+  // Sleep for the operation time (microseconds)
+  usleep(optime);
 
 }
 
