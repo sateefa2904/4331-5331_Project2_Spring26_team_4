@@ -122,16 +122,7 @@ int zgt_tm::TxWrite(long tid, long obno, int thrNum)
  {
   //call the write function (writetx); same as above
 
-    // write your code
-
-　　//WMorokoshi [3/15/2026]
-   //again set the txmgr semaphore first. create a thread and first check 
-   // whether this thread can proceed based on the condition variable for that thread.
-   // This is to prevent 2 operations of the same Tx follow one another.
-   // Then get the lock and perform the read operation.
-   //  Call the read function in transaction. 
-   //now create the thread and call the method readtx(void *)
-   
+   //WMorokoshi [3/15/2026]
 #ifdef TM_DEBUG
    printf("\ncreating TxRead thread for Tx: %d\n", tid);fflush(stdout);
    fflush(stdout);
@@ -168,7 +159,30 @@ int zgt_tm::CommitTx(long tid, int thrNum)
  
 int zgt_tm::AbortTx(long tid, int thrNum)
  {       
-    //write your code
+//WMorokoshi [3/15/2026]
+// Create a thread for the abort operation
+#ifdef TM_DEBUG
+   printf("\ncreating AbortTx thread for Tx: %d\n", tid);
+   fflush(stdout);
+#endif
+
+   struct param *nodeinfo = (struct param*)malloc(sizeof(struct param));
+   nodeinfo->tid    = tid;
+   nodeinfo->obno   = -1;
+   nodeinfo->Txtype = ' ';
+   nodeinfo->count  = --SEQNUM[tid];
+
+   int status;
+   status = pthread_create(&threadid[thrNum], NULL, aborttx, (void*)nodeinfo);
+   if (status){
+     printf("ERROR: return code from pthread_create() is:%d\n", status);
+     exit(-1);
+   }
+
+#ifdef TM_DEBUG
+   printf("\nexiting AbortTx thread create for Tx: %d\n", tid);
+   fflush(stdout);
+#endif
    return(0);  //successful operation
  }
 
