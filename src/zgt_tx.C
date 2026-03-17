@@ -122,27 +122,38 @@ void *writetx(void *arg){ //do the operations for writing; similar to readTx //e
 
 // common method to process read/write: Just a suggestion
 
-void *process_read_write_operation(long tid, long obno,  int count, char mode){ //added emely
-
-    // first wait until this operation is allowed to execute
+void *process_read_write_operation(long tid, long obno, int count, char mode)
+{
+    // Step 1: Ensure operations execute in order within the same transaction
     start_operation(tid, count);
 
-    // now the BeginTx thread should already have created the transaction
+    // Step 2: Get the transaction
     zgt_tx *tx = get_tx(tid);
     if (tx == NULL) {
         finish_operation(tid);
         return NULL;
     }
-    char lockmode = (mode == 'W') ? 'X' : 'S';
 
+    // Step 3: Determine lock type
+    char lockmode;
+    if (mode == 'S') {
+        lockmode = 'S';  // Shared lock for read
+    } else {
+        lockmode = 'X';  // Exclusive lock for write
+    }
+
+    // Step 4: Try to acquire lock
     if (tx->set_lock(tid, 1, obno, count, lockmode) < 0) {
         finish_operation(tid);
         return NULL;
     }
 
-    tx->perform_read_write_operation(tid, obno, lockmode);
+    // Step 5: Perform the actual read/write
+    tx->perform_read_write_operation(tid, obno, mode);
 
+    // Step 6: Finish operation (wake next op in same Tx)
     finish_operation(tid);
+
     return NULL;
 }
 
