@@ -1,0 +1,171 @@
+
+Initializing the TM
+
+Leaving TM initialization
+// serial history
+// serial history
+// 2 transactions
+// 2 transactions
+// same object accessed multiple times
+// same object accessed multiple times
+LogFile ../test-files/S2T.log
+Log file name:../test-files/S2T.log
+
+Entering openlog
+
+Log file opened successfully
+Leaving openlog
+BeginTx 1 W
+BeginTx : 1
+
+TxType : W
+
+
+Creating BeginTx thread for Tx: 1
+
+Finished creating BeginTx thread for Tx: 1
+Read    1 1
+Read : 1 : 1
+
+
+Creating TxRead thread for Tx: 1
+
+Exiting TxRead thread create for Tx: 1
+Read    1 2
+Read : 1 : 2
+
+
+Creating TxRead thread for Tx: 1
+
+Exiting TxRead thread create for Tx: 1
+Write   1 3
+Write : 1 : 3
+
+
+creating TxWrite thread for Tx: 1
+
+exiting TxRead thread create for Tx: 1
+Write   1 4
+Write : 1 : 4
+
+
+creating TxWrite thread for Tx: 1
+
+exiting TxRead thread create for Tx: 1
+Read    1 1
+Read : 1 : 1
+
+
+Creating TxRead thread for Tx: 1
+
+Exiting TxRead thread create for Tx: 1
+Write   1 2
+Write : 1 : 2
+
+
+creating TxWrite thread for Tx: 1
+
+exiting TxRead thread create for Tx: 1
+Write   1 4
+Write : 1 : 4
+
+
+creating TxWrite thread for Tx: 1
+
+exiting TxRead thread create for Tx: 1
+Write   1 4
+Write : 1 : 4
+
+
+creating TxWrite thread for Tx: 1
+
+exiting TxRead thread create for Tx: 1
+Commit 1
+Commit : 1
+
+
+creating CommitTx thread for Tx: 1
+
+:::Hash node with Tid:1, obno:4 lockmode:X removed
+
+:::Hash node with Tid:1, obno:3 lockmode:X removed
+
+:::Hash node with Tid:1, obno:2 lockmode:S removed
+
+:::Hash node with Tid:1, obno:1 lockmode:S removed
+
+exiting CommitTx thread create for Tx: 1
+BeginTx 2 W
+BeginTx : 2
+
+TxType : W
+
+
+Creating BeginTx thread for Tx: 2
+
+Finished creating BeginTx thread for Tx: 2
+Read    2 5
+Read : 2 : 5
+
+
+Creating TxRead thread for Tx: 2
+
+Exiting TxRead thread create for Tx: 2
+Write   2 5
+Write : 2 : 5
+
+
+creating TxWrite thread for Tx: 2
+
+exiting TxRead thread create for Tx: 2
+Write   2 6
+Write : 2 : 6
+
+
+creating TxWrite thread for Tx: 2
+
+exiting TxRead thread create for Tx: 2
+Read    2 6
+Read : 2 : 6
+
+
+Creating TxRead thread for Tx: 2
+
+Exiting TxRead thread create for Tx: 2
+Commit  2
+Commit : 2
+
+
+creating CommitTx thread for Tx: 2
+
+:::Hash node with Tid:2, obno:6 lockmode:X removed
+
+:::Hash node with Tid:2, obno:5 lockmode:S removed
+
+exiting CommitTx thread create for Tx: 2
+end all
+Release all resources and exit:
+
+
+Entering End of schedule thread with thrNum: 16
+Wait for threads and cleanup
+Thread 0 completed with ret value: 0
+Thread 1 completed with ret value: 0
+Thread 2 completed with ret value: 0
+Thread 3 completed with ret value: 0
+Thread 4 completed with ret value: 0
+Thread 5 completed with ret value: 0
+Thread 6 completed with ret value: 0
+Thread 7 completed with ret value: 0
+Thread 8 completed with ret value: 0
+Thread 10 completed with ret value: 0
+Thread 11 completed with ret value: 0
+Thread 12 completed with ret value: 0
+Thread 13 completed with ret value: 0
+Thread 14 completed with ret value: 0
+ALL threads finished their work
+Releasing mutexes and condpool
+Releasing all semaphores
+endTm completed
+
+Finished end of schedule thread: endTm

@@ -86,11 +86,11 @@ void *begintx(void *arg){
     tx->nextr = ZGT_Sh->lastr;
     ZGT_Sh->lastr = tx;   
     zgt_v(0); 			// Release tx manager 
-  fprintf(ZGT_Sh->logfile, "T%d\t%c\tBeginTx\n", node->tid, node->Txtype);	// Write log record and close
+    fprintf(ZGT_Sh->logfile, "T%d\t%c\tBeginTx\n", node->tid, node->Txtype);	// Write log record and close
     fflush(ZGT_Sh->logfile);
-  finish_operation(node->tid);
-  free(node);//added em
-  pthread_exit(NULL);				// thread exit 
+    finish_operation(node->tid);
+    free(node);//added em
+    pthread_exit(NULL);				// thread exit 
 }
 
 /* Method to handle Readtx action in test file    */
@@ -246,25 +246,28 @@ void *do_commit_abort_operation(long t, char status){
   return NULL;
 }
 
-int zgt_tx::remove_tx ()
+int zgt_tx::remove_tx()
 {
-  //remove the transaction from the TM
-  
-  zgt_tx *txptr, *lastr1;
-  lastr1 = ZGT_Sh->lastr;
-  for(txptr = ZGT_Sh->lastr; txptr != NULL; txptr = txptr->nextr){	// scan through list
-	  if (txptr->tid == this->tid){		// if correct node is found          
-		 lastr1->nextr = txptr->nextr;	// update nextr value; done
-		 //delete this;
-         return(0);
-	  }
-	  else lastr1 = txptr->nextr;			// else update prev value
-   }
-  fprintf(ZGT_Sh->logfile, "Trying to Remove a Tx:%d that does not exist\n", this->tid);
-  fflush(ZGT_Sh->logfile);
-  printf("Trying to Remove a Tx:%d that does not exist\n", this->tid);
-  fflush(stdout);
-  return -1;
+    zgt_tx *curr = ZGT_Sh->lastr;
+    zgt_tx *prev = NULL;
+
+    while (curr != NULL) {
+        if (curr->tid == this->tid) {
+            if (prev == NULL)
+                ZGT_Sh->lastr = curr->nextr;   // removing head
+            else
+                prev->nextr = curr->nextr;     // removing middle/tail
+            return 0;
+        }
+        prev = curr;
+        curr = curr->nextr;
+    }
+
+    fprintf(ZGT_Sh->logfile, "Trying to Remove a Tx:%d that does not exist\n", this->tid);
+    fflush(ZGT_Sh->logfile);
+    printf("Trying to Remove a Tx:%d that does not exist\n", this->tid);
+    fflush(stdout);
+    return -1;
 }
 
 /* this method sets lock on objno1 with lockmode1 for a tx*/
@@ -277,7 +280,7 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
 
   //[SAteefa 3/16/2026]
   while(1)
-  { //retry loop
+  { 
     zgt_p(0); //lock transaction manager/lock table
   
   zgt_tx *tx = get_tx(tid1); //find transaction
@@ -289,20 +292,45 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
     return -1; //fail transaction can't proceed :(
   }
 
-  //check if this Tx already holds a lock on this object
-  if(ZGT_Ht->findt(tid1, sgno1, obno1) != NULL)
+  zgt_hlink *held = ZGT_Ht->findt(tid1, sgno1, obno1);
+  if (held != NULL)
   {
-    //if lock already exists, mark the transaction as active
-    tx->status = TR_ACTIVE;
-    //clear any waiting object indictor
-    tx->obno = -1;
-    //clear any waiting lock mode indicator
-    tx->lockmode = ' ';
-    //release the transaction manager semaphore
-    zgt_v(0);
+    if (held->lockmode == 'X' || held->lockmode == lockmode1) {
+        tx->status = TR_ACTIVE;
+        tx->obno = -1;
+        tx->lockmode = ' ';
+        zgt_v(0);
+        return 0;
+    }
 
-    //return success transaction already owns the lock
-    return 0;
+    // upgrade S -> X only if no other transaction holds this object
+    if (held->lockmode == 'S' && lockmode1 == 'X') {
+        bool otherHolderExists = false;
+        long holderTid = -1;
+
+        for (zgt_hlink *h = ZGT_Sh->head[((sgno1 + 1) * obno1) & (ZGT_DEFAULT_HASH_TABLE_SIZE - 1)];
+             h != NULL;
+             h = h->next)
+        {
+            if (h->sgno != sgno1 || h->obno != obno1) continue;
+            if (h->tid == tid1) continue;
+
+            otherHolderExists = true;
+            holderTid = h->tid;
+            break;
+        }
+
+        if (!otherHolderExists) {
+            held->lockmode = 'X';
+            tx->status = TR_ACTIVE;
+            tx->obno = -1;
+            tx->lockmode = ' ';
+            zgt_v(0);
+            return 0;
+        }
+
+        // otherwise do not return here; let the normal wait logic handle it
+    }
   }
 
   //assume initially that the lock can be granted
@@ -314,7 +342,7 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
   {
     if(h->sgno != sgno1 || h->obno != obno1) continue;  //skip bc it does not correspond to same segment/object
     if(h->tid == tid1) continue; //skip entries that belong to the same transaction
-    zgt_tx *holderTx = get_tx(h->tid); //retrieve the transaction that currently holds the lock
+    //zgt_tx *holderTx = get_tx(h->tid); //retrieve the transaction that currently holds the lock
     
     //if we are requesting an exclusive (write) lock
     if(lockmode1 == 'X')
@@ -332,14 +360,13 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
     if(lockmode1 == 'S')
     {
       //if existing holder is write transaction, this is a conflict
-      if(holderTx!=NULL && holderTx->Txtype == 'W')
+      if(h->lockmode == 'X')
       {
         //mark that lock cannot be granted immediately
         canGrant = false;
         //record which transaction is blocking us
         holderTid = h->tid;
-        //exit loop since a conflicting holder was found
-        break;
+        break; //exit loop since a conflicting holder was found
       }
     }
   }
@@ -374,12 +401,20 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
   }
    // if the lock could not be granted, the transaction must wait
     tx->status = TR_WAIT;
-
-    // record which object the transaction is waiting for
     tx->obno = obno1;
-
-    // record the type of lock the transaction is waiting for
     tx->lockmode = lockmode1;
+
+    fprintf(ZGT_Sh->logfile,
+            "T%-2ld\t\t%-8s\t%3ld:%-3c:%6d\t\t%-9s\t%-10s\tW for T%ld\n",
+            tid1,
+            (lockmode1 == 'X') ? "WriteTx" : "ReadTx",
+            obno1,
+            (lockmode1 == 'X') ? 'X' : 'S',
+            ZGT_Sh->optime[tid1],
+            (lockmode1 == 'X') ? "WriteLock" : "ReadLock",
+            "NotGranted",
+            holderTid);
+    fflush(ZGT_Sh->logfile);
 
     // associate the blocking transaction's semaphore with this transaction
     setTx_semno(holderTid, (int)holderTid);

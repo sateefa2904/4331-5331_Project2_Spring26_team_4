@@ -13,7 +13,7 @@
 #include "zgt_tm.h"
 #include "zgt_extern.h"
 
-#define TEAM_NO      4     //insert your team number here
+#define TEAM_NO      4  
  
 
 // Modified to fix handling with 'end all' as last input
@@ -28,13 +28,14 @@ void zgt_tm::openlog(string lfile)
 #ifdef TM_DEBUG
   printf("Entering openlog\n");fflush(stdout);
 #endif
-  this->logfilename = (char *) malloc(sizeof(char) * MAX_FILENAME);
-    int i=0;
+this->logfilename = (char *) malloc(sizeof(char) * MAX_FILENAME);
+int i=0;
  while(lfile[i] !='\0')
   {
    this->logfilename[i] = lfile[i];
    i++;
-  } 
+  }
+this->logfilename[i] = '\0';
 // ASantra [2/07/2026]: Commented out to properly name logfiles
 // logfilename[--i] = '\0';
 #ifdef TM_DEBUG
