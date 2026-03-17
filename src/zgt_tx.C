@@ -86,7 +86,7 @@ void *begintx(void *arg){
     tx->nextr = ZGT_Sh->lastr;
     ZGT_Sh->lastr = tx;   
     zgt_v(0); 			// Release tx manager 
-  fprintf(ZGT_Sh->logfile, "T%d\t\t%c\t\tBeginTx\n", node->tid, node->Txtype);	// Write log record and close
+  fprintf(ZGT_Sh->logfile, "T%d\t%c\tBeginTx\n", node->tid, node->Txtype);	// Write log record and close
     fflush(ZGT_Sh->logfile);
   finish_operation(node->tid);
   free(node);//added em
@@ -225,9 +225,9 @@ void *do_commit_abort_operation(long t, char status){
   myTid = tx->tid;   // save before remove
 
   if (status == TR_END){
-    fprintf(ZGT_Sh->logfile, "T%d\t\t\t\tCommitTx\t", (int)t);
+    fprintf(ZGT_Sh->logfile, "T%d\t\tCommitTx\t", (int)t);
   } else {
-    fprintf(ZGT_Sh->logfile, "T%d\t\t\t\tAbortTx\t", (int)t);
+    fprintf(ZGT_Sh->logfile, "T%d\t\tAbortTx\t", (int)t);
   }
   fflush(ZGT_Sh->logfile);
 
@@ -529,7 +529,7 @@ void zgt_tx::perform_read_write_operation(long tid,long obno, char lockmode){
     ZGT_Sh->objarray[obno]->value -= 4;
 
     fprintf(ZGT_Sh->logfile,
-            "T%-2d\t\t\t\t%-8s\t%3d:%-3d:%-6d\t\t%-9s\t%-7s\t\t%c\n",
+            "T%-2d\t\t%-8s\t%3d:%-3d:%-6d\t\t%-9s\t%-7s\t\t%c\n",
             (int)tid,
             "ReadTx",
             (int)obno, 
@@ -545,7 +545,7 @@ void zgt_tx::perform_read_write_operation(long tid,long obno, char lockmode){
     ZGT_Sh->objarray[obno]->value += 7;
 
     fprintf(ZGT_Sh->logfile,
-            "T%-2d\t\t\t\t%-8s\t%3d:%-3d:%-6d\t\t%-9s\t%-7s\t\t%c\n",
+            "T%-2d\t\t%-8s\t%3d:%-3d:%-6d\t\t%-9s\t%-7s\t\t%c\n",
             (int)tid,
             "WriteTx",
             (int)obno, 
