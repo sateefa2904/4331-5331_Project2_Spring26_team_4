@@ -26,7 +26,7 @@ void zgt_tm::openlog(string lfile)
 {
 //FILE *outfile;  not needed; changed to logfile for uniformity
 #ifdef TM_DEBUG
-  printf("entering openlog\n");fflush(stdout);
+  printf("Entering openlog\n");fflush(stdout);
 #endif
   this->logfilename = (char *) malloc(sizeof(char) * MAX_FILENAME);
     int i=0;
@@ -48,7 +48,7 @@ void zgt_tm::openlog(string lfile)
  fprintf(this->logfile, "TxId\tTxtype\tOperation\tObId:Obvalue:optime\tLockType\tStatus\t\tTxStatus\n");
  fflush(this->logfile);
 #ifdef TM_DEBUG
- printf("leaving openlog\n");fflush(stdout);
+ printf("Leaving openlog\n");fflush(stdout);
  fflush(stdout);
 #endif
 }
@@ -61,7 +61,7 @@ int zgt_tm::BeginTx(long tid, int thrNum, char type)
 //begintx(void *thdarg) .Pass the thread arguments in a structure.   
 
 #ifdef TM_DEBUG
-   printf("\ncreating BeginTx thread for Tx: %ld\n", tid);
+   printf("\nCreating BeginTx thread for Tx: %ld\n", tid);
    fflush(stdout);
 #endif
    struct param *nodeinfo = (struct param*)malloc(sizeof(struct param));
@@ -77,7 +77,7 @@ int zgt_tm::BeginTx(long tid, int thrNum, char type)
      exit(-1);
    }
 #ifdef TM_DEBUG
-   printf("\nfinished creating BeginTx thread for Tx: %ld\n", tid);
+   printf("\nFinished creating BeginTx thread for Tx: %ld\n", tid);
    fflush(stdout);
 #endif
    return(0);
@@ -94,7 +94,7 @@ int zgt_tm::TxRead(long tid, long obno, int thrNum)
    //now create the thread and call the method readtx(void *)
    
 #ifdef TM_DEBUG
-   printf("\ncreating TxRead thread for Tx: %ld\n", tid);fflush(stdout);
+   printf("\nCreating TxRead thread for Tx: %ld\n", tid);fflush(stdout);
    fflush(stdout);
 #endif
    pthread_t thread1;
@@ -112,7 +112,7 @@ int zgt_tm::TxRead(long tid, long obno, int thrNum)
    }
    
 #ifdef TM_DEBUG
-   printf("\nexiting TxRead thread create for Tx: %ld\n", tid);
+   printf("\nExiting TxRead thread create for Tx: %ld\n", tid);
    fflush(stdout);
 #endif
    return(0);   //successful operation
@@ -362,7 +362,7 @@ zgt_tm::zgt_tm()
   zgt_init_sema_rest(ZGT_Semid);  
   
 #ifdef TM_DEBUG
-   printf("\nleaving TM initialization\n");
+   printf("\nLeaving TM initialization\n");
    fflush(stdout);
 #endif
 };

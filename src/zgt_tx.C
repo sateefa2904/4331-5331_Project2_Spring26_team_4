@@ -101,10 +101,10 @@ void *begintx(void *arg){
 /* until the lock is released */
 
 void *readtx(void *arg){
-  struct param *node = (struct param*)arg;// get tid and objno and count
-  // do the operations for reading.
-
+  //[SAteefa]
+  struct param *node = (struct param*)arg;
   process_read_write_operation(node->tid, node->obno, node->count, 'S');
+  free(node);
   pthread_exit(NULL);
 }
 
@@ -134,26 +134,25 @@ void *writetx(void *arg){ //do the operations for writing; similar to readTx //e
 
 void *process_read_write_operation(long tid, long obno,  int count, char mode){ //added emely
 
-    //find the transaction
-    zgt_tx *tx = get_tx(tid);
-    if (tx == NULL) return NULL;
-
-    //synchronize operation order
+    // first wait until this operation is allowed to execute
     start_operation(tid, count);
 
-    // determine lock type
+    // now the BeginTx thread should already have created the transaction
+    zgt_tx *tx = get_tx(tid);
+    if (tx == NULL) {
+        finish_operation(tid);
+        return NULL;
+    }
     char lockmode = (mode == 'W') ? 'X' : 'S';
 
-    // get lock
-    if (tx->set_lock(tid, 1, obno, count, lockmode) < 0)
+    if (tx->set_lock(tid, 1, obno, count, lockmode) < 0) {
+        finish_operation(tid);
         return NULL;
+    }
 
-    //perform actual read/write
     tx->perform_read_write_operation(tid, obno, lockmode);
 
-    //finish 
     finish_operation(tid);
-
     return NULL;
 }
 
