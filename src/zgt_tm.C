@@ -124,7 +124,7 @@ int zgt_tm::TxWrite(long tid, long obno, int thrNum)
 
    //WMorokoshi [3/15/2026]
 #ifdef TM_DEBUG
-   printf("\ncreating TxRead thread for Tx: %ld\n", tid);fflush(stdout);
+   printf("\ncreating TxWrite thread for Tx: %ld\n", tid);fflush(stdout); //changed em
    fflush(stdout);
 #endif
    pthread_t thread1;
