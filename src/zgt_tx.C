@@ -529,9 +529,14 @@ void zgt_tx::perform_read_write_operation(long tid,long obno, char lockmode){
     ZGT_Sh->objarray[obno]->value -= 4;
 
     fprintf(ZGT_Sh->logfile,
-            "T%d\t\t\t\tReadTx\t\t%d:%d:%d\t\t\tReadLock\tGranted\t\t\t%c\n",
+            "T%-2d\t\t\t\t%-8s\t%3d:%-3d:%-6d\t\t%-9s\t%-7s\t\t%c\n",
             (int)tid,
-            (int)obno, ZGT_Sh->objarray[obno]->value, optime,
+            "ReadTx",
+            (int)obno, 
+            ZGT_Sh->objarray[obno]->value, 
+            optime,
+            "ReadLock",
+            "Granted",
             this->status);
     fflush(ZGT_Sh->logfile);
   }
@@ -540,9 +545,14 @@ void zgt_tx::perform_read_write_operation(long tid,long obno, char lockmode){
     ZGT_Sh->objarray[obno]->value += 7;
 
     fprintf(ZGT_Sh->logfile,
-            "T%d\t\t\t\tWriteTx\t\t%d:%d:%d\t\t\tWriteLock\tGranted\t\t\t%c\n",
+            "T%-2d\t\t\t\t%-8s\t%3d:%-3d:%-6d\t\t%-9s\t%-7s\t\t%c\n",
             (int)tid,
-            (int)obno, ZGT_Sh->objarray[obno]->value, optime,
+            "WriteTx",
+            (int)obno, 
+            ZGT_Sh->objarray[obno]->value, 
+            optime,
+            "WriteLock",
+            "Granted",
             this->status);
     fflush(ZGT_Sh->logfile);
   }
