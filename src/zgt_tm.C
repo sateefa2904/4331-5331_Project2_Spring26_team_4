@@ -169,6 +169,9 @@ int zgt_tm::CommitTx(long tid, int thrNum) //emely
      printf("ERROR: return code from pthread_create() is:%d\n", status);
      exit(-1);
    }
+   //trying to fix sequence/threading issues em
+   pthread_join(threadid[thrNum], NULL);
+   threadid[thrNum] = 0;
 
 #ifdef TM_DEBUG
    printf("\nexiting CommitTx thread create for Tx: %ld\n", tid);
@@ -216,11 +219,17 @@ int zgt_tm::endTm(int thrNum){
    fflush(stdout);
 #endif
    printf("Wait for threads and cleanup\n");
+   /////MADE CHANGE em
   for (i=0; i < thrNum; i++) {
-    rc = pthread_join(threadid[i], NULL);
-    printf("Thread %d completed with ret value: %d\n", i, rc);
-    fflush(stdout);
-  }
+
+  // ONLY join valid threads
+      if (threadid[i] != 0) {
+         rc = pthread_join(threadid[i], NULL);
+         printf("Thread %d completed with ret value: %d\n", i, rc);
+         threadid[i] = 0;
+      }
+   }
+   ////////
   printf("ALL threads finished their work\n");
   fflush(stdout);
   printf("Releasing mutexes and condpool\n");
