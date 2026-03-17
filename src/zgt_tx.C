@@ -101,15 +101,17 @@ void *begintx(void *arg){
 
 void *readtx(void *arg){
   struct param *node = (struct param*)arg;// get tid and objno and count
+  // do the operations for reading.
 
-  // do the operations for reading. Write your code
+  process_read_write_operation(node->tid, node->obno, node->count, 'S');
+  pthread_exit(NULL);
 }
 
 
 void *writetx(void *arg){ //do the operations for writing; similar to readTx //emely
   struct param *node = (struct param*)arg;	// struct parameter that contains
   
-  // do the operations for writing; similar to readTx. Write your code
+  // do the operations for writing; similar to readTx.
 ////////
   //synchronize with transaction manager
   start_operation(node->tid, node->count);
@@ -134,12 +136,20 @@ void *process_read_write_operation(long tid, long obno,  int count, char mode){
   
 }
 
-void *aborttx(void *arg)
+
+void *aborttx(void *arg) //ABORT operation
 {
+
+  //[SAteefa 3/16/2024]
+  //convert argumnent to struct to get Tx info
   struct param *node = (struct param*)arg;// get tid and count  
 
-  //write your code
-
+  //ensure that operations in the same transation execute in order
+  start_operation(node->tid, node->count); //blocks thread until all previous operations in the same transaction have completed (transaction consistency).
+  //change transaction state to TR_ABORT, release all locks currently held by transactio , wake up any transactions waiting for locks, and log the abort operation.
+  do_commit_abort_operation(node->tid, TR_ABORT); 
+  //signal that the transaction finished. this wakes the next pending operation in the same transaction seqeunce.
+  finish_operation(node->tid);
   pthread_exit(NULL);			// thread exit
 }
 
@@ -244,9 +254,133 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
   //sempool in the transaction manager. Set the appropriate parameters in the
   //transaction list if waiting.
   //if successful  return(0); else -1
+
+  //[SAteefa 3/16/2026]
+  while(1)
+  { //retry loop
+    zgt_p(0); //lock transaction manager/lock table
   
-    //write your code
-  
+  zgt_tx *tx = get_tx(tid1); //find transaction
+  if(tx == NULL)             //transaction missing?
+  {
+    fprintf(ZGT_Sh->logfile, "Lock request by non-existent Tx %ld\n", tid1); //log error in system logfile
+    fflush(ZGT_Sh->logfile); //ensure the log output is immediately written
+    zgt_v(0); //release transaction manager semphore
+    return -1; //fail transaction can't proceed :(
+  }
+
+  //check if this Tx already holds a lock on this object
+  if(ZGT_Ht->findt(tid1, sgno1, obno1) != NULL)
+  {
+    //if lock already exists, mark the transaction as active
+    tx->status = TR_ACTIVE;
+    //clear any waiting object indictor
+    tx->obno = -1;
+    //clear any waiting lock mode indicator
+    tx->lockmode = ' ';
+    //release the transaction manager semaphore
+    zgt_v(0);
+
+    //return success transaction already owns the lock
+    return 0;
+  }
+
+  //assume initially that the lock can be granted
+  bool canGrant = true;
+  //variable to store transaction that is currently blocking us
+  long holderTid = -1;
+  //transverse the lock table bucket corresponding to this object
+  for(zgt_hlink *h = ZGT_Sh->head[((sgno1 + 1) * obno1) & (ZGT_DEFAULT_HASH_TABLE_SIZE -1)]; h!=NULL; h = h->next)
+  {
+    if(h->sgno != sgno1 || h->obno != obno1) continue;  //skip bc it does not correspond to same segment/object
+    if(h->tid == tid1) continue; //skip entries that belong to the same transaction
+    zgt_tx *holderTx  get_tx(h->tid); //retrieve the transaction that currently holds the lock
+    
+    //if we are requesting an exclusive (write) lock
+    if(lockmode1 == 'X')
+    {
+        //write lock conflict with any existing lock
+        canGrant = false;
+        //record the block transaction ID
+        holderTid = h->tid;
+
+        //stop scanning since a conflict was found
+        break;
+    }
+
+    //if we are requesting a shared (read) lock
+    if(lockmode1 == 'S')
+    {
+      //if existing holder is write transaction, this is a conflict
+      if(holderTx!=NULL && holderTx->Txtype == 'W')
+      {
+        //mark that lock cannot be granted immediately
+        canGrant = false;
+        //record which transaction is blocking us
+        holderTid = h->tid;
+        //exit loop since a conflicting holder was found
+        break;
+      }
+    }
+  }
+
+  //if no conflict from the above were found, the lock can be given
+  if(canGrant)
+  {
+    //attempt to add the lock to the lock table
+    if(ZGT_Ht->add(tx, sgno1, obno1, lockmode1) < 0)
+    {
+      //log an error if the lock table insertion fails
+      fprintf(ZGT_Sh->logfile, "Could not add lock for T%ld on O%ld\n", tid1, obno1);
+      //flush the logfile to ensure the message is written
+      fflush(ZGT_Sh->logfile);
+      //release the transaction manager semaphore
+      zgt_v(0);
+
+      //return failure due to lock table insertion error
+      return -1;
+    }
+
+      //update transaction state to active since the lock is now granted 
+      tx->status = TR_ACTIVE;
+      // clear the waiting object field
+      tx->obno = -1;
+      // clear the waiting lock mode
+      tx->lockmode = ' ';
+      // release the transaction manager semaphore
+      zgt_v(0);
+      // return success because the lock has been successfully granted
+      return 0;
+  }
+   // if the lock could not be granted, the transaction must wait
+    tx->status = TR_WAIT;
+
+    // record which object the transaction is waiting for
+    tx->obno = obno1;
+
+    // record the type of lock the transaction is waiting for
+    tx->lockmode = lockmode1;
+
+    // associate the blocking transaction's semaphore with this transaction
+    setTx_semno(holderTid, (int)holderTid);
+
+    // release the transaction manager semaphore before going to sleep
+    zgt_v(0);
+
+    // block the current thread on the semaphore of the transaction holding the lock
+    zgt_p((int)holderTid);
+
+    // after waking up, retrieve the transaction again to verify its status
+    tx = get_tx(tid1);
+
+    // if the transaction no longer exists, return failure
+    if (tx == NULL) return -1;
+
+    // if the transaction was aborted while waiting, stop execution
+    if (tx->status == TR_ABORT) return -1;
+
+    // otherwise, retry acquiring the lock from the beginning of the loop
+  } 
 }
 
 int zgt_tx::free_locks()
