@@ -89,7 +89,8 @@ void *begintx(void *arg){
   fprintf(ZGT_Sh->logfile, "T%d\t%c \tBeginTx\n", node->tid, node->Txtype);	// Write log record and close
     fflush(ZGT_Sh->logfile);
   finish_operation(node->tid);
-  pthread_exit(NULL);				// thread exit
+  free(node);//added em
+  pthread_exit(NULL);				// thread exit 
 }
 
 /* Method to handle Readtx action in test file    */
@@ -113,30 +114,48 @@ void *writetx(void *arg){ //do the operations for writing; similar to readTx //e
   
   // do the operations for writing; similar to readTx.
 ////////
-  //synchronize with transaction manager
-  start_operation(node->tid, node->count);
+  // //synchronize with transaction manager
+  // start_operation(node->tid, node->count);
 
   // process the write operation
   process_read_write_operation(node->tid, node->obno, node->count, 'W');
 
-  // write to log file
-  fprintf(ZGT_Sh->logfile, "T%ld\tWriteTx\tObj:%ld\n", node->tid, node->obno);
-  fflush(ZGT_Sh->logfile);
+  // // write to log file
+  // fprintf(ZGT_Sh->logfile, "T%ld\tWriteTx\tObj:%ld\n", node->tid, node->obno);
+  // fflush(ZGT_Sh->logfile);
 
-  // finish operation
-  finish_operation(node->tid);
-
+  // // finish operation
+  // finish_operation(node->tid);
+  free(node);//added em
   pthread_exit(NULL);   // thread exit
 }
 
 // common method to process read/write: Just a suggestion
 
-void *process_read_write_operation(long tid, long obno,  int count, char mode){
+void *process_read_write_operation(long tid, long obno,  int count, char mode){ //added em
 
-  return NULL;
-  
+    // Step 1: find the transaction
+    zgt_tx *tx = get_tx(tid);
+    if (tx == NULL) return NULL;
+
+    // Step 2: synchronize operation order
+    start_operation(tid, count);
+
+    // Step 3: determine lock type
+    char lockmode = (mode == 'W') ? 'X' : 'S';
+
+    // Step 4: acquire lock
+    if (tx->set_lock(tid, 1, obno, count, lockmode) < 0)
+        return NULL;
+
+    // Step 5: perform actual read/write
+    tx->perform_read_write_operation(tid, obno, lockmode);
+
+    // Step 6: finish operation
+    finish_operation(tid);
+
+    return NULL;
 }
-
 
 void *aborttx(void *arg) //ABORT operation
 {
@@ -151,6 +170,7 @@ void *aborttx(void *arg) //ABORT operation
   do_commit_abort_operation(node->tid, TR_ABORT); 
   //signal that the transaction finished. this wakes the next pending operation in the same transaction seqeunce.
   finish_operation(node->tid);
+  free(node);//added em
   pthread_exit(NULL);			// thread exit
 }
 
@@ -164,7 +184,7 @@ void *committx(void *arg) //emely
   start_operation(node->tid, node->count);
 
     // call transaction manager commit
-  ZGT_Sh->CommitTx(node->tid, node->count);
+  do_commit_abort_operation(node->tid, TR_END);
 
     // log commit operation
   fprintf(ZGT_Sh->logfile, "T%ld\tCommitTx\n", node->tid);
@@ -172,7 +192,7 @@ void *committx(void *arg) //emely
 
     // finish operation
   finish_operation(node->tid);
-
+  free(node);
   pthread_exit(NULL);			// thread exit
 }
 
@@ -447,6 +467,7 @@ int zgt_tx::end_tx()
     while (prevp->nextr != linktx) prevp = prevp->nextr;
     prevp->nextr = linktx->nextr;    
   }
+  return 0; //added em
 }
 
 // currently not used
@@ -565,6 +586,7 @@ void *start_operation(long tid, long count){
   while(ZGT_Sh->condset[tid] != count)		// wait if condset[t] is != count
     pthread_cond_wait(&ZGT_Sh->condpool[tid],&ZGT_Sh->mutexpool[tid]);
   
+  return NULL; //added em
 }
 
 // Otherside of teh start operation;
@@ -574,6 +596,7 @@ void *finish_operation(long tid){
   ZGT_Sh->condset[tid]--;	// decr condset[tid] for allowing the next op
   pthread_cond_broadcast(&ZGT_Sh->condpool[tid]);// other waiting threads of same tx
   pthread_mutex_unlock(&ZGT_Sh->mutexpool[tid]); 
+  return NULL; //added em
 }
 
 

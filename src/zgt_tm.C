@@ -135,7 +135,7 @@ int zgt_tm::TxWrite(long tid, long obno, int thrNum)
    nodeinfo->Txtype = ' ';
    nodeinfo->count = --SEQNUM[tid];
    int status;
-   status = pthread_create(&threadid[thrNum],NULL,readtx,(void*)nodeinfo);
+   status = pthread_create(&threadid[thrNum],NULL,writetx,(void*)nodeinfo); //changed em 
    if (status){
      printf("ERROR: return code from pthread_create() is:%d\n", status);
      exit(-1);
@@ -151,29 +151,32 @@ int zgt_tm::TxWrite(long tid, long obno, int thrNum)
 
 int zgt_tm::CommitTx(long tid, int thrNum) //emely
 {
-    zgt_tx *tx;
-
-    // find the transaction in trans list
-    tx = get_tx(tid);
-
-      //make sure trans exists
-    if (tx == NULL) {
-        printf("ERROR: Transaction %ld not found\n", tid);
-        fflush(stdout);
-        return -1;
-    }
-
 #ifdef TM_DEBUG
-    printf("CommitTx: T%ld committing\n", tid);
-    fflush(stdout);
+   printf("\ncreating CommitTx thread for Tx: %ld\n", tid);
+   fflush(stdout);
 #endif
 
-    // end the transaction (commit)
-    tx->end_tx();
+   struct param *nodeinfo = (struct param*)malloc(sizeof(struct param));
+   nodeinfo->tid = tid;
+   nodeinfo->obno = -1;
+   nodeinfo->Txtype = ' ';
+   nodeinfo->count = --SEQNUM[tid];
 
-    return 0;
+   int status;
+   status = pthread_create(&threadid[thrNum], NULL, committx, (void*)nodeinfo);
+
+   if (status){
+     printf("ERROR: return code from pthread_create() is:%d\n", status);
+     exit(-1);
+   }
+
+#ifdef TM_DEBUG
+   printf("\nexiting CommitTx thread create for Tx: %ld\n", tid);
+   fflush(stdout);
+#endif
+
+   return 0;
 }
-
 
  
 int zgt_tm::AbortTx(long tid, int thrNum)
