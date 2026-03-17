@@ -132,26 +132,26 @@ void *writetx(void *arg){ //do the operations for writing; similar to readTx //e
 
 // common method to process read/write: Just a suggestion
 
-void *process_read_write_operation(long tid, long obno,  int count, char mode){ //added em
+void *process_read_write_operation(long tid, long obno,  int count, char mode){ //added emely
 
-    // Step 1: find the transaction
+    //find the transaction
     zgt_tx *tx = get_tx(tid);
     if (tx == NULL) return NULL;
 
-    // Step 2: synchronize operation order
+    //synchronize operation order
     start_operation(tid, count);
 
-    // Step 3: determine lock type
+    // determine lock type
     char lockmode = (mode == 'W') ? 'X' : 'S';
 
-    // Step 4: acquire lock
+    // get lock
     if (tx->set_lock(tid, 1, obno, count, lockmode) < 0)
         return NULL;
 
-    // Step 5: perform actual read/write
+    //perform actual read/write
     tx->perform_read_write_operation(tid, obno, lockmode);
 
-    // Step 6: finish operation
+    //finish 
     finish_operation(tid);
 
     return NULL;
@@ -187,7 +187,6 @@ void *committx(void *arg) //emely
   do_commit_abort_operation(node->tid, TR_END);
 
     // log commit operation
-  fprintf(ZGT_Sh->logfile, "T%ld\tCommitTx\n", node->tid);
   fflush(ZGT_Sh->logfile);
 
     // finish operation
