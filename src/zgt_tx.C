@@ -114,18 +114,8 @@ void *writetx(void *arg){ //do the operations for writing; similar to readTx //e
   
   // do the operations for writing; similar to readTx.
 ////////
-  // //synchronize with transaction manager
-  // start_operation(node->tid, node->count);
-
   // process the write operation
   process_read_write_operation(node->tid, node->obno, node->count, 'W');
-
-  // // write to log file
-  // fprintf(ZGT_Sh->logfile, "T%ld\tWriteTx\tObj:%ld\n", node->tid, node->obno);
-  // fflush(ZGT_Sh->logfile);
-
-  // // finish operation
-  // finish_operation(node->tid);
   free(node);//added em
   pthread_exit(NULL);   // thread exit
 }

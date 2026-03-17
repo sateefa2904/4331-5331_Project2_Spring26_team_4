@@ -158,10 +158,10 @@ if (! inFile.is_open())
        }
        
        else if(tokens[0]=="Commit" || tokens[0] == "commit") {
-        int k = string2int(c,tokens[1]);
-	      tid = k;
-        printf("Commit : %ld\n\n", tid);
-        if((op= ZGT_Sh->CommitTx(tid, thrNum++))<0)
+       printf("Commit : %ld\n\n", tid);
+	   int k = string2int(c,tokens[1]);
+	   tid = k;
+	   if((op= ZGT_Sh->CommitTx(tid, thrNum++))<0)
 	       cout << "\nerro from:" << tokens[0] <<" for TID:" << tid << "\n";
 	       //  { //error code}
        }
