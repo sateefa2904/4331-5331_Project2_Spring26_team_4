@@ -22,11 +22,22 @@
 
 extern zgt_tm *ZGT_Sh;			// Transaction manager object
 
- union semun {
+ /* commented out for soli's macOS union semun {
              int val;
              struct semid_ds *buf;
              ushort *array;
              } ZGT_arg;
+*/
+
+#ifndef __APPLE__
+union semun {
+  int val;
+  struct semid_ds *buf;
+  unsigned short *array;
+};
+#endif
+
+union semun ZGT_arg;
 
 struct sembuf  ZGT_sopbuf, *ZGT_sops= &ZGT_sopbuf;
 
@@ -37,7 +48,7 @@ if (create != IPC_CREAT) create = 0;
     
   if ((semid= semget(ZGT_Key_sem,ZGT_Nsema, create| 0666))< 0) {
     /* error handling */
-    printf("could not acquire semaphores: %s\n", semid);
+    printf("Could not acquire semaphores: %d\n", semid);
     exit(1);
   }
   return(semid);

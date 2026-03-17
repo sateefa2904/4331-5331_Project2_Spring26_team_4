@@ -113,7 +113,7 @@ if (! inFile.is_open())
      // Passing the Txtype to get the transaction type.
        strcpy(temp,tokens[2].c_str());
        Txtype = temp[0];
-	 printf("BeginTx : %d\n\n", tid);
+	 printf("BeginTx : %ld\n\n", tid);
 	 printf("TxType : %c\n\n", Txtype);
 	 if ((op=ZGT_Sh->BeginTx(tid, thrNum++,Txtype))<0)
 	   cout << "\nerro from:" << tokens[0] <<" for TID:" << tid << "\n";
@@ -127,7 +127,7 @@ if (! inFile.is_open())
 	 k = string2int(c,tokens[2]);
 	 obno = k;
 	 //    cout << "\nRead: " << tid << " : " << obno;
-	 printf("Read : %d : %d\n\n", tid, obno);
+	 printf("Read : %ld : %ld\n\n", tid, obno);
 	 if((op= ZGT_Sh->TxRead(tid,obno, thrNum++))<0)
 	   cout << "\nerro from:" << tokens[0] <<" for TID:" << tid << "\n";
 	 //  { //error code }
@@ -141,7 +141,7 @@ if (! inFile.is_open())
 	 obno = k;
 	 
 	 //      cout << "\nwrite: " << tid << " : " << obno;
-	 printf("Write : %d : %d\n\n", tid, obno);
+	 printf("Write : %ld : %ld\n\n", tid, obno);
 	 if((op= ZGT_Sh->TxWrite(tid,obno, thrNum++))<0)
 	   cout << "\nerro from:" << tokens[0] <<" for TID:" << tid << "\n";
          // { //error code}
@@ -151,14 +151,14 @@ if (! inFile.is_open())
 	 tid = k;
 	 
 	 //     cout << "\nAbort: " << tid;
-	 printf("Abort : %d\n\n", tid);
+	 printf("Abort : %ld\n\n", tid);
 	 if((op= ZGT_Sh->AbortTx(tid, thrNum++))<0)
 	   cout << "\nerro from:" << tokens[0] <<" for TID:" << tid << "\n";
 	 // { //error code}
        }
        
        else if(tokens[0]=="Commit" || tokens[0] == "commit") {
-       printf("Commit : %d\n\n", tid);
+       printf("Commit : %ld\n\n", tid);
 	   int k = string2int(c,tokens[1]);
 	   tid = k;
 	   if((op= ZGT_Sh->CommitTx(tid, thrNum++))<0)

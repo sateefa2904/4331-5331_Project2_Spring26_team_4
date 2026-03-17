@@ -149,7 +149,7 @@ void zgt_ht::print_ht(){
 #endif
       while (hlink != NULL) {
 #ifdef HT_DEBUG
-	printf("%d %d %c ->", hlink->tid, hlink->obno, hlink->lockmode);
+	printf("%ld %ld %c ->", hlink->tid, hlink->obno, hlink->lockmode);
 	fflush(stdout);
 #endif
 	hlink = hlink->next;

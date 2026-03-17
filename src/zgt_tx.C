@@ -133,6 +133,7 @@ void *writetx(void *arg){ //do the operations for writing; similar to readTx //e
 
 void *process_read_write_operation(long tid, long obno,  int count, char mode){
 
+  return NULL;
   
 }
 
@@ -140,7 +141,7 @@ void *process_read_write_operation(long tid, long obno,  int count, char mode){
 void *aborttx(void *arg) //ABORT operation
 {
 
-  //[SAteefa 3/16/2024]
+  //[SAteefa 3/16/2026]
   //convert argumnent to struct to get Tx info
   struct param *node = (struct param*)arg;// get tid and count  
 
@@ -244,7 +245,7 @@ int zgt_tx::remove_tx ()
   fflush(ZGT_Sh->logfile);
   printf("Trying to Remove a Tx:%d that does not exist\n", this->tid);
   fflush(stdout);
-  return(-1);
+  return -1;
 }
 
 /* this method sets lock on objno1 with lockmode1 for a tx*/
@@ -294,7 +295,7 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
   {
     if(h->sgno != sgno1 || h->obno != obno1) continue;  //skip bc it does not correspond to same segment/object
     if(h->tid == tid1) continue; //skip entries that belong to the same transaction
-    zgt_tx *holderTx  get_tx(h->tid); //retrieve the transaction that currently holds the lock
+    zgt_tx *holderTx = get_tx(h->tid); //retrieve the transaction that currently holds the lock
     
     //if we are requesting an exclusive (write) lock
     if(lockmode1 == 'X')
@@ -392,7 +393,7 @@ int zgt_tx::free_locks()
 
   zgt_hlink* temp = head;  //first obj of tx
   
-  for(temp;temp != NULL;temp = temp->nextp){	// SCAN Tx obj list
+  for(;temp != NULL;temp = temp->nextp){	// SCAN Tx obj list
 
       fprintf(ZGT_Sh->logfile, "%d : %d, ", temp->obno, ZGT_Sh->objarray[temp->obno]->value);
       fflush(ZGT_Sh->logfile);
@@ -412,7 +413,7 @@ int zgt_tx::free_locks()
   fprintf(ZGT_Sh->logfile, "\n");
   fflush(ZGT_Sh->logfile);
   
-  return(0);
+  return 0;
 }		
 
 // CURRENTLY Not USED
@@ -438,7 +439,7 @@ int zgt_tx::end_tx()
   if (linktx == NULL) {
     printf("\ncannot remove a Tx node; error\n");
     fflush(stdout);
-    return (1);
+    return 1;
   }
   if (linktx == ZGT_Sh->lastr) ZGT_Sh->lastr = linktx->nextr;
   else {
@@ -451,7 +452,7 @@ int zgt_tx::end_tx()
 // currently not used
 int zgt_tx::cleanup()
 {
-  return(0);
+  return 0;
   
 }
 
@@ -538,7 +539,7 @@ int zgt_tx::setTx_semno(long tid, int semno){
   
   txptr = get_tx(tid);
   if (txptr == NULL){
-    printf("\n:::ERROR:Txid %d wants to wait on sem:%d of tid:%d which does not exist\n", this->tid, semno, tid);
+    printf("\n:::ERROR:Txid %d wants to wait on sem:%d of tid:%ld which does not exist\n", this->tid, semno, tid);
     fflush(stdout);
     exit(1);
   }
@@ -548,7 +549,7 @@ int zgt_tx::setTx_semno(long tid, int semno){
   }
   else if (txptr->semno != semno){
 #ifdef TX_DEBUG
-    printf(":::ERROR Trying to wait on sem:%d, but on Tx:%d\n", semno, txptr->tid);
+    printf(":::ERROR Trying to wait on sem:%d, but on Tx:%ld\n", semno, txptr->tid);
     fflush(stdout);
 #endif
     exit(1);
