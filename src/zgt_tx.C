@@ -110,6 +110,7 @@ void *readtx(void *arg){
 
 
 void *writetx(void *arg){ //do the operations for writing; similar to readTx //emely
+  //[EMunoz 3/16/2026]
   struct param *node = (struct param*)arg;	/// gest tid, obno, and sequence count
   
   // do the operations for writing; similar to readTx.
@@ -125,6 +126,7 @@ void *writetx(void *arg){ //do the operations for writing; similar to readTx //e
 
 void *process_read_write_operation(long tid, long obno, int count, char mode) //emely
 {
+  //[EMunoz 3/16/2026]
     //ensures operations execute in order within the same transaction
     start_operation(tid, count);
 
@@ -177,7 +179,7 @@ void *aborttx(void *arg) //ABORT operation
 
 void *committx(void *arg) //emely
 {
- 
+  //[EMunoz 3/17/2026]
     //remove the locks/objects before committing 
   struct param *node = (struct param*)arg;// get tid and count
 

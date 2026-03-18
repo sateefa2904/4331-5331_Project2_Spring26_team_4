@@ -151,6 +151,7 @@ int zgt_tm::TxWrite(long tid, long obno, int thrNum)
  }
 
 int zgt_tm::CommitTx(long tid, int thrNum) //emely
+   //[EMunoz 3/17/2026]
 {
 #ifdef TM_DEBUG // similar to begin
    printf("\ncreating CommitTx thread for Tx: %ld\n", tid);
