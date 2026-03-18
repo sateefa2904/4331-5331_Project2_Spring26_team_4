@@ -136,7 +136,6 @@ void *process_read_write_operation(long tid, long obno, int count, char mode) //
     }
 
     //determine lock type //!!!shared locks allow concurrent reads but exclusive locks block all
-     * other access
     char lockmode;
     if (mode == 'S') {
         lockmode = 'S';  // shared lock for read
