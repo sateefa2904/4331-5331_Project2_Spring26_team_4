@@ -110,49 +110,51 @@ void *readtx(void *arg){
 
 
 void *writetx(void *arg){ //do the operations for writing; similar to readTx //emely
-  struct param *node = (struct param*)arg;	// struct parameter that contains
+  struct param *node = (struct param*)arg;	/// gest tid, obno, and sequence count
   
   // do the operations for writing; similar to readTx.
 ////////
   // process the write operation
-  process_read_write_operation(node->tid, node->obno, node->count, 'W');
+  process_read_write_operation(node->tid, node->obno, node->count, 'W'); //W will request x lock on obj
+  
   free(node);//added em
   pthread_exit(NULL);   // thread exit
 }
 
 // common method to process read/write: Just a suggestion
 
-void *process_read_write_operation(long tid, long obno, int count, char mode)
+void *process_read_write_operation(long tid, long obno, int count, char mode) //emely
 {
-    // Step 1: Ensure operations execute in order within the same transaction
+    //ensures operations execute in order within the same transaction
     start_operation(tid, count);
 
-    // Step 2: Get the transaction
-    zgt_tx *tx = get_tx(tid);
-    if (tx == NULL) {
+    //  Get the transaction
+    zgt_tx *tx = get_tx(tid); //get the trans obj from the trans list
+    if (tx == NULL) {//if there arent any
         finish_operation(tid);
         return NULL;
     }
 
-    // Step 3: Determine lock type
+    //determine lock type //!!!shared locks allow concurrent reads but exclusive locks block all
+     * other access
     char lockmode;
     if (mode == 'S') {
-        lockmode = 'S';  // Shared lock for read
+        lockmode = 'S';  // shared lock for read
     } else {
-        lockmode = 'X';  // Exclusive lock for write
+        lockmode = 'X';  // xclusive lock blocks others
     }
 
-    // Step 4: Try to acquire lock
-    if (tx->set_lock(tid, 1, obno, count, lockmode) < 0) {
+    // Try to acquire lock from lock mgr
+    if (tx->set_lock(tid, 1, obno, count, lockmode) < 0) {//lock granted=0, will wait on semaphore/abort otherwise
         finish_operation(tid);
         return NULL;
     }
 
-    // Step 5: Perform the actual read/write
+    // Do the actual read/write
     tx->perform_read_write_operation(tid, obno, mode);
 
-    // Step 6: Finish operation (wake next op in same Tx)
-    finish_operation(tid);
+    //Signals that operation is complet
+    finish_operation(tid);// now next operation can proceed
 
     return NULL;
 }
@@ -177,20 +179,19 @@ void *aborttx(void *arg) //ABORT operation
 void *committx(void *arg) //emely
 {
  
-    //remove the locks/objects before committing
+    //remove the locks/objects before committing 
   struct param *node = (struct param*)arg;// get tid and count
 
-    // synchronize operation order
+    ///makes sure prev ops of this trans completed
   start_operation(node->tid, node->count);
+    
+  do_commit_abort_operation(node->tid, TR_END); // status to TR_END// releases all locks//
 
-    // call transaction manager commit
-  do_commit_abort_operation(node->tid, TR_END);
-
-    // log commit operation
-  fflush(ZGT_Sh->logfile);
+    // log commit op
+  fflush(ZGT_Sh->logfile); //
 
     // finish operation
-  finish_operation(node->tid);
+  finish_operation(node->tid);// signals that this operation is completeand lets the nextcsame trans go next
   free(node);
   pthread_exit(NULL);			// thread exit
 }

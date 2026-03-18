@@ -152,17 +152,18 @@ int zgt_tm::TxWrite(long tid, long obno, int thrNum)
 
 int zgt_tm::CommitTx(long tid, int thrNum) //emely
 {
-#ifdef TM_DEBUG
+#ifdef TM_DEBUG // similar to begin
    printf("\ncreating CommitTx thread for Tx: %ld\n", tid);
    fflush(stdout);
 #endif
 
    struct param *nodeinfo = (struct param*)malloc(sizeof(struct param));
-   nodeinfo->tid = tid;
-   nodeinfo->obno = -1;
-   nodeinfo->Txtype = ' ';
-   nodeinfo->count = --SEQNUM[tid];
+   nodeinfo->tid = tid; //store the trans ID
+   nodeinfo->obno = -1; //we dont need obj for commit
+   nodeinfo->Txtype = ' '; //same here^
+   nodeinfo->count = --SEQNUM[tid];///dec to keep op order
 
+   //make new thead to execute commit
    int status;
    status = pthread_create(&threadid[thrNum], NULL, committx, (void*)nodeinfo);
 
@@ -174,7 +175,7 @@ int zgt_tm::CommitTx(long tid, int thrNum) //emely
    pthread_join(threadid[thrNum], NULL);
    threadid[thrNum] = 0;
 
-#ifdef TM_DEBUG
+#ifdef TM_DEBUG// similar to begin
    printf("\nexiting CommitTx thread create for Tx: %ld\n", tid);
    fflush(stdout);
 #endif
