@@ -189,7 +189,7 @@ int zgt_tm::AbortTx(long tid, int thrNum)
 //WMorokoshi [3/15/2026]
 // Create a thread for the abort operation
 #ifdef TM_DEBUG
-   printf("\ncreating AbortTx thread for Tx: %ld\n", tid);
+   printf("\nCreating AbortTx thread for Tx: %ld\n", tid);
    fflush(stdout);
 #endif
 
@@ -265,7 +265,7 @@ int zgt_tm::endTm(int thrNum){
 int zgt_tm::ddlockDet()
  {       
 #ifdef TM_DEBUG
-   printf("\ncreating ddlockDet thread\n");
+   printf("\nCreating ddlockDet thread\n");
    fflush(stdout);
 #endif
 
@@ -305,7 +305,7 @@ int zgt_tm::chooseVictim()
    //exit(-1);
    //}
 #ifdef TM_DEBUG
-   printf("\nleaving chooseVictim creating thread\n");
+   printf("\nLeaving chooseVictim creating thread\n");
    fflush(stdout);
 #endif
    return(0);  //successful operation
